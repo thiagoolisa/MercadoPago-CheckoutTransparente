@@ -3,7 +3,7 @@
 Implementação do Checkout Transparente em um site da WIX, feito no Editor x e utilizando as APIs disponibilizadas pelo Mercado Pago.
 
 ## Linguagens e plugins utilizados
-- JavaScript ES13, Html 5,
+- JavaScript ES13, Html 5
 - Velo 4.0.0
 
 ## Obter chave (Public key e Access token)
