@@ -1,0 +1,15 @@
+import { cpf } from 'cpf-cnpj-validator';
+import { cnpj } from 'cpf-cnpj-validator';
+export async function validarEmail(email) {
+ var validator = require('validator');
+ return await validator.isEmail(email);
+}
+export async function validarDocumento(tipo, numero) {
+ if (tipo === 'cpf') 
+ {
+ return await cpf.isValid(numero)
+ } else 
+ {
+ return await cnpj.isValid(numero)
+ }
+}

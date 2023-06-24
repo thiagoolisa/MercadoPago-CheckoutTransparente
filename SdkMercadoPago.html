@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body style="overflow: hidden;">
+ <img src="https://yt3.googleusercontent.com/cmFrex7B0vUrC-Tu_dD1EyFDpamtbSmV45S9lbisLjCZtYMVi79E-hpb9O3x5-c1u-UZgTS=s900-c-k-c0x00ffffff-no-rj"
+ width="100%" height="auto" />
+ <!--INICIALIZAÇÃO DO SDK MERCADO PAGO-->
+ <script
+src="https://secure.mlstatic.com/sdk/javascript/v1/mercadopago.js"></script>
+ <!--CONFIGURAÇÃO DA PUBLIC KEY MERCADO PAGO-->
+ <script>
+ window.Mercadopago.setPublishableKey("SUA API KEY");
+
+ </script>
+ <form action="/process_payment" method="post" id="paymentForm">
+ <!--DOCUMENTOS-->
+ <input id="email" name="email" type="hidden" />
+ <select id="docType" name="docType" data-checkout="docType" style="display:
+none;">
+ <option value="CPF">cpf</option>
+ <option value="CNPJ">cpf</option>
+ </select>
+ <input id="docNumber" name="docNumber" data-checkout="docNumber"
+type="hidden" />
+ <!--NOME DO TITULAR NO CARTÃO-->
+ <input id="cardholderName" data-checkout="cardholderName" type="hidden">
+ <!--DATA DE EXPIRAÇÃO-->
+ <input type="hidden" placeholder="MM" id="cardExpirationMonth" datacheckout="cardExpirationMonth">
+ <input type="hidden" placeholder="YY" id="cardExpirationYear" datacheckout="cardExpirationYear">
+ <!--NÚMERO DO CARTÃO-->
+ <input type="hidden" id="cardNumber" data-checkout="cardNumber">
+ <!--CVV DO CARTÃO-->
+ <input id="securityCode" data-checkout="securityCode" type="hidden">
+ <!--BANCO-->
+ <select id="issuer" name="issuer" data-checkout="issuer" style="display:
+none;"></select>
+ <!--PARCELAS-->
+ <select style="display: none;" id="installments"
+name="installments"></select>
+ <!--DADOS EXTRAS-->
+ <input type="hidden" name="transactionAmount" id="transactionAmount" />
+ <input type="hidden" name="paymentMethodId" id="paymentMethodId" />
+ <input type="hidden" name="description" id="description" />
+ <br>
+ <button type="submit" id="finalPagar" style="display: none;">Pagar</button>
+ <br>
+ </div>
+ </div>
+ </form>
+ <script type="text/javascript">
+ window.onmessage = function (event) {
+ console.log('CAPTURANDO ENTRADA', event)
+ capturarEntrada(event.data.id, event.data.value)
+ }
+ function capturarEntrada(id, value) {
+ if (id === 'submit') {
+ const element = document.querySelector('#finalPagar');
+ element.click();
+ } else if (id === 'submitErro') {
+ doSubmit = false
+ } else {
+ let element = document.getElementById(id).value = value;
+ if (id === 'cardNumber') {
+ guessPaymentMethod()
+ }
+ }
+ }
+ window.Mercadopago.getIdentificationTypes();
+ document.getElementById('cardNumber').addEventListener('keyup',
+guessPaymentMethod);
+ //IDENTIFICAÇÃO DA BANDEIRA DO CARTÃO
+ function guessPaymentMethod() {
+ let cardnumber = document.getElementById("cardNumber").value;
+ if (cardnumber.length >= 6) {
+ let bin = cardnumber.substring(0, 6);
+ window.Mercadopago.getPaymentMethod({
+ "bin": bin
+ }, setPaymentMethod);
+ }
+ };
+ function setPaymentMethod(status, response) {
+ //reconhecimento da bandeira do cartão
+ if (status == 200) {
+ let paymentMethod = response[0];
+ document.getElementById('paymentMethodId').value = paymentMethod.id;
+ window.parent.postMessage({ 'tipo': 'paymentMethod', 'valor':
+paymentMethod.id, 'bandeira': paymentMethod.thumbnail }, '*')
+ getIssuers(paymentMethod.id);
+ } else {
+ window.parent.postMessage({ 'tipo': 'erro', 'codigo': '001',
+'mensagem': 'Número do cartão inválido' }, '*')
+ }
+ }
+ //Modelo de objeto - paymentMethod
+ /*{
+ "id": "master",
+ "name": "Mastercard",
+ "payment_type_id": "credit_card",
+ "status": "active",
+ "secure_thumbnail": "https://www.mercadopago.com/orgimg/MP3/API/logos/master.gif",
+ "thumbnail": "https://www.mercadopago.com/orgimg/MP3/API/logos/master.gif",
+ "deferred_capture": "supported",
+ "settings": [
+ {
+ "security_code": {
+ "mode": "mandatory",
+"card_location": "back",
+"length": 3
+ },
+ "card_number": {
+ "length": 16,
+"validation": "standard"
+ },
+ "bin": {
+ "pattern":
+"^(5|(2(221|222|223|224|225|226|227|228|229|23|24|25|26|27|28|29|3|4|5|6|70|71|720)))
+",
+ "installments_pattern":
+"^(?!(525823|525824|525834|527660|529133|529205|536390|513368|539131|529053|538450|53
+8455|515675|549636|524886|546616|529115|511623|521580|527308|527648|528841|530551|533
+728|534300|539181|549622|528590|542865|538454|543299|549622|533728|230653|516129|5276
+48|533519|557996|533433|511623|522157|529518|530551|546001|506704|506706|506761|50988
+7|506754|509882|506760|506764|506755|509881|506758|506702|506700|506770|509880|506768
+|506766|506716|506771|506767|506762|506735|506699|506756|506723|509884|506772|506713|
+506773|506710|506765|509901|509885|509815|506763|506734|506714|506712|506711|509894|5
+09812|506769|506759|506757|506701))",
+ "exclusion_pattern":
+"^(506704|545377|506706|506761|509887|526968|550207|528635|542652|502121|506721|50672
+2|506776|536969|589916|(50670[7-8])|(506715)|(50671[7-9])|(50672[0-1])|(50672[4-
+9])|(50673[0-3])|(506739)|(50674[0-8])|(50675[0-3])|(50677[4-8])|(50900[0-
+9])|(50901[3-9])|(50902[0-9])|(50903[1-5])|(50903[8-9])|(50904[0-9])|(50905[0-
+9])|(50906[0-4])|(50906[6-9])|(50907[0-2])|(50907[4-5])|(504175)|(50907[6-
+9])|(50908[0-9])|(509[0-7][0-9]{2})|(509[8]0[0-9])|(50983[1-9])|(5098[4-6][0-
+9])|(5098[7][0-7])|(50989[7-9])|(509900)|(50991[8-9])|(5099[2-5][0-9])|(5099[6][0-
+4])|(50997[1-9])|(50998[0-6])|(50999[5-9])|509810)"
+ }
+ },
+ {
+ "security_code": {
+ "mode": "mandatory",
+"card_location": "back",
+"length": 3
+ },
+ "card_number": {
+ "length": 19,
+"validation": "standard"
+ },
+ "bin": {
+ "pattern": "^(532884)",
+"installments_pattern":
+"^(?!(549622|533728|230653|516129|527648|533519|557996|533433|511623|522157|529518|53
+0551|546001))",
+ "exclusion_pattern":
+"^(506704|545377|506706|506761|509887|506754|509882|506760|506764|506755|509881|50675
+8|506702|506700|506770|509880|506768|506766|506716|506771|506767|506762|506735|506699
+|506756|506723|509884|506772|506713|506773|506710|506765|509901|509885|509815|506763|
+506734|506714|506712|506711|509894|509812|506769|506759|506757|506701)"
+ }
+ }
+ ],
+ "additional_info_needed": [
+ "cardholder_name",
+ "cardholder_identification_type",
+ "cardholder_identification_number"
+ ],
+ "min_allowed_amount": 0.5,
+ "max_allowed_amount": 60000,
+ "accreditation_time": 2880,
+ "financial_institutions": [],
+ "processing_modes": [
+ "aggregator"
+ ]
+ }*/
+ function getIssuers(paymentMethodId) {
+ window.Mercadopago.getIssuers(
+ paymentMethodId,
+ setIssuers
+ );
+ }
+ function setIssuers(status, response) {
+ if (status == 200) {
+ let issuerSelect = document.getElementById('issuer');
+ response.forEach((issuer, i) => {
+ let opt = document.createElement('option');
+ opt.text = issuer.name;
+ opt.value = issuer.id;
+ issuerSelect.appendChild(opt);
+ if (i === response.length - 1) {
+ window.parent.postMessage({ 'tipo': 'bancos', 'valor':
+issuer.id }, '*')
+ }
+ });
+ getInstallments(
+ document.getElementById('paymentMethodId').value,
+ document.getElementById('transactionAmount').value,
+ issuerSelect.value
+ );
+ } else {
+ alert(`issuers method info error: ${response}`);
+ }
+ }
+ function getInstallments(paymentMethodId, transactionAmount, issuerId) {
+ window.Mercadopago.getInstallments({
+ "payment_method_id": paymentMethodId,
+ "amount": parseFloat(transactionAmount),
+ "issuer_id": parseInt(issuerId)
+ }, setInstallments);
+ }
+ function setInstallments(status, response) {
+ if (status == 200) {
+ document.getElementById('installments').options.length = 0;
+ let optOutput = []
+ response[0].payer_costs.forEach((payerCost, i) => {
+ let opt = document.createElement('option');
+ opt.text = payerCost.recommended_message;
+ opt.value = payerCost.installments;
+ document.getElementById('installments').appendChild(opt);
+ optOutput.push({ 'value': String(payerCost.installments),
+'label': payerCost.recommended_message })
+ if (i === response[0].payer_costs.length - 1) {
+ window.parent.postMessage({ 'tipo': 'parcelas', 'valor':
+optOutput }, '*')
+ }
+ });
+ } else {
+ alert(`installments method info error: ${response}`);
+ }
+ }
+ doSubmit = false;
+ document.getElementById('paymentForm').addEventListener('submit',
+getCardToken);
+ function getCardToken(event) {
+ event.preventDefault();
+ if (!doSubmit) {
+ let $form = document.getElementById('paymentForm');
+ window.Mercadopago.createToken($form, setCardTokenAndPay);
+ return false;
+ }
+ };
+ function setCardTokenAndPay(status, response) {
+ if (status == 200 || status == 201) {
+ let form = document.getElementById('paymentForm');
+ let card = document.createElement('input');
+ card.setAttribute('name', 'token');
+ card.setAttribute('type', 'hidden');
+ card.setAttribute('value', response.id);
+ form.appendChild(card);
+ doSubmit = true;
+ window.parent.postMessage({ 'tipo': 'sucesso', 'token': response.id
+}, '*')
+ } else {
+ window.parent.postMessage({ 'tipo': 'erro', 'codigo':
+response.cause[0].code, 'mensagem': response.cause[0].description }, '*')
+ }
+ };
+ </script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+export async function pagarComCartao(dataVenda) {
+    var mercadopago = require('mercadopago');
+    mercadopago.configurations.setAccessToken("SUA CREDENCIAL");
+
+    var payment_data = {
+        transaction_amount: dataVenda.valor,
+        token: dataVenda.token,
+        description: "produto teste",
+        installments: Number(dataVenda.parcelas),
+        payment_method_id: dataVenda.paymentMethodId,
+        issuer_id: dataVenda.issuer_id,
+        payer: {
+            email: dataVenda.email,
+            identification: {
+                type: dataVenda.docType,
+                number: dataVenda.docNumber
+            }
+        }
+    };
+    return await mercadopago.payment.save(payment_data)
+        .then(async function (response) {
+            console.log(response)
+            return await { 'tipo': 'sucesso', 'valor': await response }
+        })
+        .catch(async function (error) {
+            console.log(error)
+            return await { 'tipo': 'erro', 'valor': await error }
+        });
+}
+export function verificarPagamentoEfetuado(id) {
+    var mercadopago = require('mercadopago');
+    mercadopago.configurations.setAccessToken('SUA CREDENCIAL'); let paymentId = id;
+    mercadopago.payment.capture(paymentId, mercadopago, (error, response) => {
+        if (error) 
+        {
+            console.log('ERRO', error);
+        } else
+         {
+            console.log('DATA', response)
+        }
+    });
+}
